@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SpeechControls } from '../components/common/SpeechControls';
 import { ThemeToggle } from '../components/common/ThemeToggle';
@@ -10,6 +10,7 @@ const pause = vi.fn();
 const resume = vi.fn();
 
 beforeEach(() => {
+  vi.useFakeTimers();
   speak.mockClear();
   cancel.mockClear();
   pause.mockClear();
@@ -29,6 +30,10 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
     },
   });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 function renderWithApp(ui: React.ReactNode) {
@@ -65,6 +70,8 @@ describe('SpeechControls', () => {
     renderWithApp(<SpeechControls text="Hola mundo" />);
 
     fireEvent.click(screen.getByLabelText('Play passage audio'));
+    vi.advanceTimersByTime(50);
+
     expect(speak).toHaveBeenCalledTimes(1);
   });
 
@@ -74,7 +81,24 @@ describe('SpeechControls', () => {
     renderWithApp(<SpeechControls text="Hola mundo" />);
     fireEvent.click(screen.getByLabelText('Stop and reset passage audio'));
 
-    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalled();
+  });
+
+  it('can play again after stop even when the browser keeps speaking=true', () => {
+    setSpeechState(true);
+
+    renderWithApp(<SpeechControls text="Hola mundo" />);
+    fireEvent.click(screen.getByLabelText('Stop and reset passage audio'));
+
+    cancel.mockClear();
+    speak.mockClear();
+    setSpeechState(true);
+
+    fireEvent.click(screen.getByLabelText('Play passage audio'));
+    vi.advanceTimersByTime(50);
+
+    expect(cancel).toHaveBeenCalled();
+    expect(speak).toHaveBeenCalled();
   });
 });
 

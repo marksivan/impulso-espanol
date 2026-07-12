@@ -46,10 +46,10 @@ export function SpeechControls({
         <button
           type="button"
           onClick={play}
-          disabled={!canPlay || state === 'speaking'}
+          disabled={!canPlay}
           aria-label={playLabel}
           title={playLabel}
-          className={controlButtonClass(!canPlay || state === 'speaking')}
+          className={controlButtonClass(!canPlay)}
         >
           <span aria-hidden="true">{state === 'paused' ? '▶️' : '🔈'}</span>
         </button>

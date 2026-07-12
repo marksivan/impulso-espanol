@@ -24,52 +24,39 @@ function pickSpanishVoice(): SpeechSynthesisVoice | undefined {
   );
 }
 
+function resetSpeechSynthesis(): void {
+  const synthesis = window.speechSynthesis;
+  synthesis.cancel();
+  // Chrome can keep `speaking === true` after cancel; a second cancel on the next tick clears it.
+  window.setTimeout(() => synthesis.cancel(), 0);
+}
+
 export function useSpanishSpeech(text: string, rate: number = DEFAULT_SPEECH_RATE) {
   const supported = useSpeechSupported();
   const [state, setState] = useState<SpeechPlaybackState>('idle');
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const rateRef = useRef(rate);
+  const stateRef = useRef<SpeechPlaybackState>('idle');
 
   useEffect(() => {
     rateRef.current = rate;
   }, [rate]);
 
-  const syncState = useCallback(() => {
-    const synthesis = window.speechSynthesis;
-    if (!synthesis) return;
-
-    if (synthesis.speaking && synthesis.paused) {
-      setState('paused');
-      return;
-    }
-
-    if (synthesis.speaking) {
-      setState('speaking');
-      return;
-    }
-
-    setState('idle');
-  }, []);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const stop = useCallback(() => {
     if (!supported) return;
-    window.speechSynthesis.cancel();
+    resetSpeechSynthesis();
     utteranceRef.current = null;
     setState('idle');
   }, [supported]);
 
-  const play = useCallback(() => {
+  const startUtterance = useCallback(() => {
     if (!supported || !text.trim()) return;
 
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setState('speaking');
-      return;
-    }
-
-    if (window.speechSynthesis.speaking) return;
-
-    window.speechSynthesis.cancel();
+    resetSpeechSynthesis();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'es-ES';
@@ -88,13 +75,38 @@ export function useSpanishSpeech(text: string, rate: number = DEFAULT_SPEECH_RAT
     };
 
     utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-    setState('speaking');
+
+    // A short delay after cancel helps browsers restart the speech queue reliably.
+    window.setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+      setState('speaking');
+    }, 50);
   }, [supported, text]);
 
+  const play = useCallback(() => {
+    if (!supported || !text.trim()) return;
+
+    const synthesis = window.speechSynthesis;
+
+    if (stateRef.current === 'paused' && synthesis.paused) {
+      synthesis.resume();
+      setState('speaking');
+      return;
+    }
+
+    startUtterance();
+  }, [supported, text, startUtterance]);
+
   const pause = useCallback(() => {
-    if (!supported || !window.speechSynthesis.speaking || window.speechSynthesis.paused) return;
-    window.speechSynthesis.pause();
+    if (!supported || stateRef.current !== 'speaking') return;
+
+    const synthesis = window.speechSynthesis;
+    if (!synthesis.speaking) {
+      setState('idle');
+      return;
+    }
+
+    synthesis.pause();
     setState('paused');
   }, [supported]);
 
@@ -111,7 +123,7 @@ export function useSpanishSpeech(text: string, rate: number = DEFAULT_SPEECH_RAT
     window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-      window.speechSynthesis.cancel();
+      resetSpeechSynthesis();
     };
   }, [supported]);
 
@@ -119,20 +131,13 @@ export function useSpanishSpeech(text: string, rate: number = DEFAULT_SPEECH_RAT
     stop();
   }, [text, stop]);
 
-  useEffect(() => {
-    if (!supported || state === 'idle') return;
-
-    const interval = window.setInterval(syncState, 250);
-    return () => window.clearInterval(interval);
-  }, [supported, state, syncState]);
-
   return {
     supported,
     state,
     play,
     pause,
     stop,
-    canPlay: Boolean(text.trim()),
+    canPlay: Boolean(text.trim()) && state !== 'speaking',
     canPause: state === 'speaking',
     canStop: state === 'speaking' || state === 'paused',
   };
