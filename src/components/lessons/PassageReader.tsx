@@ -4,6 +4,7 @@ import { lookupWord } from '../../services/dictionaryService';
 import { vocabularyRepository } from '../../repositories/vocabularyRepository';
 import { progressRepository } from '../../repositories/progressRepository';
 import { tokenizeSpanishWord, getSentenceContainingWord } from '../../utilities/helpers';
+import { SpeakButton } from '../common/SpeakButton';
 import { Button } from '../common/Button';
 import { useApp } from '../../context/AppContext';
 
@@ -84,6 +85,8 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
     }
   }
 
+  const isA1 = lesson.level.startsWith('A1');
+
   const paragraphs = settings.readingFocusMode
     ? [lesson.passage.paragraphs[currentParagraph]]
     : lesson.passage.paragraphs;
@@ -93,14 +96,18 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
       <article
         className={`flex-1 font-reading leading-relaxed ${
           settings.readingFocusMode ? 'max-w-2xl mx-auto' : ''
-        }`}
-        style={{ fontSize: sizeMap[fontSize] }}
+        } ${isA1 ? 'space-y-2' : ''}`}
+        style={{ fontSize: sizeMap[fontSize], lineHeight: isA1 ? 1.8 : undefined }}
         aria-label="Spanish passage"
       >
+        <div className="flex items-center gap-2 mb-4">
+          <SpeakButton text={lesson.passage.text} label="Listen to passage" />
+          <span className="text-xs text-[var(--color-text-muted)]">Listen to passage</span>
+        </div>
         {paragraphs.map((para, idx) => {
           const realIdx = settings.readingFocusMode ? currentParagraph : idx;
           return (
-            <div key={realIdx} className="mb-6">
+            <div key={realIdx} className={isA1 ? 'mb-8' : 'mb-6'}>
               <p className="m-0">
                 {para.split(/(\s+)/).map((part, i) => {
                   if (/^\s+$/.test(part)) return part;

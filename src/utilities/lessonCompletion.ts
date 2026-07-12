@@ -25,9 +25,16 @@ export function createInitialProgress(lesson: Lesson): LessonProgressRecord {
 export function scoreQuestion(
   question: Question,
   userAnswer: string | string[],
+  lessonLevel?: string,
 ): boolean {
   if (question.type === 'short-response' || question.type === 'summary') {
-    return userAnswer.length > 0 && (Array.isArray(userAnswer) ? userAnswer[0].trim().length > 10 : userAnswer.trim().length > 10);
+    const minLen = lessonLevel?.startsWith('A1') ? 5 : 10;
+    return (
+      userAnswer.length > 0 &&
+      (Array.isArray(userAnswer)
+        ? userAnswer[0].trim().length >= minLen
+        : userAnswer.trim().length >= minLen)
+    );
   }
   return answersMatch(userAnswer, question.correctAnswer);
 }

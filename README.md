@@ -1,6 +1,6 @@
 # Impulso Español
 
-A polished Spanish-learning web application for learners at CEFR A2–B2 who want challenging reading comprehension, contextual vocabulary, grammar analysis, and measurable skill development — without childish gamification.
+A polished Spanish-learning web application for learners at CEFR **A1 through B2** who want reading comprehension, contextual vocabulary, grammar analysis, and measurable skill development — without childish gamification.
 
 **Live demo:** [https://marksivan.github.io/impulso-espanol/](https://marksivan.github.io/impulso-espanol/)
 
@@ -8,11 +8,10 @@ A polished Spanish-learning web application for learners at CEFR A2–B2 who wan
 
 Impulso Español targets learners who:
 
-- Have more than 100 days of Spanish practice
-- Already know common vocabulary and basic grammar
-- Want more challenging, meaningful content
-- Prefer reading comprehension over repetitive drills
-- Want to track real skill development
+- Have some Spanish practice (e.g. 100+ days on a beginner app) but are not ready for long A2 passages
+- Already recognize simple phrases, questions, and everyday vocabulary
+- Want a smooth progression from foundations through challenging reading
+- Prefer comprehension and skill tracking over repetitive drills
 
 The core learning loop:
 
@@ -27,12 +26,14 @@ The core learning loop:
 
 ## Target user
 
-Intermediate learners approximately **A2 through B2** who find beginner apps too slow and repetitive.
+Learners from **A1 through B2**. **A1.2 (Early Beginner)** is the recommended default starting level for someone who understands simple phrases like *Nosotros somos de la ciudad* but is not yet ready for A2 past-tense narratives. **A1.1 (Foundations)** is available as optional review.
 
 ## Features
 
-- **16 original lessons** across six levels (A2.1 → B2.2)
-- **Placement assessment** (18 questions, optional)
+- **24 original lessons** across eight levels (A1.1 → B2.2)
+- **8 A1 lessons** with short passages, gentle production tasks, and browser speech for examples
+- **Placement onboarding** with manual level selection or adaptive assessment (A1–B2)
+- **Level overview** on the homepage with practical abilities, example phrases, and readiness toward the next level
 - **Staged lesson flow**: preview → reading → comprehension → vocabulary → grammar → production
 - **Multiple question types**: multiple choice, true/false/not stated, evidence selection, fill-gap, sequence, short response
 - **Passage word lookup** with save-to-vocabulary
@@ -110,12 +111,12 @@ src/
 │   ├── layout/          # AppLayout, navigation
 │   ├── lessons/         # PassageReader, QuestionEngine, AnswerFeedback
 │   ├── vocabulary/
-│   ├── progress/
+│   ├── progress/        # CurrentLevelOverview
 │   └── review/
 ├── pages/               # Home, Learn, Lesson, Review, Vocabulary, Translator, Progress, Settings, Placement
 ├── data/
 │   ├── levels/          # CEFR level definitions
-│   ├── lessons/         # 16 lesson content files by level
+│   ├── lessons/         # 24 lesson content files by level (A1–B2)
 │   ├── placement/       # Placement test questions
 │   └── vocabulary/      # Lemma mappings
 ├── repositories/        # Progress, vocabulary, review, settings, export/import
@@ -136,7 +137,7 @@ Each lesson is a `Lesson` object with stable string IDs:
 interface Lesson {
   id: string;
   title: string;
-  level: LevelId;           // A2.1, A2.2, B1.1, B1.2, B2.1, B2.2
+  level: LevelId;           // A1.1 … B2.2
   topic: string;
   estimatedMinutes: number;
   passage: Passage;
@@ -150,12 +151,16 @@ interface Lesson {
 
 Lessons are organized in:
 
+- `src/data/lessons/a11Lessons.ts` (4 lessons)
+- `src/data/lessons/a12Lessons.ts` (4 lessons)
 - `src/data/lessons/a21Lessons.ts` (3 lessons)
 - `src/data/lessons/a22Lessons.ts` (3 lessons)
 - `src/data/lessons/b11Lessons.ts` (3 lessons)
 - `src/data/lessons/b12Lessons.ts` (3 lessons)
 - `src/data/lessons/b21Lessons.ts` (2 lessons)
 - `src/data/lessons/b22Lessons.ts` (2 lessons)
+
+**Default level:** new profiles start at **A1.2**. A1.1 is optional foundation review.
 
 ## How to add a new lesson
 
@@ -195,17 +200,27 @@ React components **never access localStorage directly**. All persistence goes th
 | `settingsRepository` | `spanishApp.settings` | User preferences |
 | `translationHistoryRepository` | `spanishApp.translationHistory` | Recent translations |
 
-Every stored value uses a versioned envelope:
+Every stored value uses a versioned envelope (schema version **2** as of the A1 expansion):
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "updatedAt": "2026-07-12T12:00:00.000Z",
   "data": {}
 }
 ```
 
 Safe helpers in `utilities/storage.ts` handle malformed JSON and return sensible defaults.
+
+### Profile migration (v1 → v2)
+
+When the app loads, `utilities/migration.ts` may update untouched default profiles from the old A2.1/A2.2 defaults to **A1.2**. Migration runs only when:
+
+- Placement has not been completed
+- No lessons, attempts, or placement results exist
+- The stored level is an old default (A2.1 or A2.2)
+
+Existing progress, manually selected levels, and completed placement results are **never** overwritten.
 
 ## Export and import
 

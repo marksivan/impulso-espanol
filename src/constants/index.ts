@@ -2,7 +2,7 @@ import type { LevelId, SkillTag } from '../types';
 
 export const APP_NAME = 'Impulso Español';
 
-export const STORAGE_SCHEMA_VERSION = 1;
+export const STORAGE_SCHEMA_VERSION = 2;
 
 export const EXPORT_VERSION = 1;
 
@@ -72,9 +72,20 @@ export const DIFFICULTY_LABELS = {
   'push-me': 'Push me',
 } as const;
 
-export const LEVEL_ORDER: LevelId[] = ['A2.1', 'A2.2', 'B1.1', 'B1.2', 'B2.1', 'B2.2'];
+export const LEVEL_ORDER: LevelId[] = [
+  'A1.1',
+  'A1.2',
+  'A2.1',
+  'A2.2',
+  'B1.1',
+  'B1.2',
+  'B2.1',
+  'B2.2',
+];
 
-export const DEFAULT_LEVEL: LevelId = 'A2.2';
+export const DEFAULT_LEVEL: LevelId = 'A1.2';
+
+export const OLD_DEFAULT_LEVELS: LevelId[] = ['A2.1', 'A2.2'];
 
 export const FONT_SIZE_MAP = {
   small: '0.95rem',

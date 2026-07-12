@@ -1,4 +1,12 @@
-export type LevelId = 'A2.1' | 'A2.2' | 'B1.1' | 'B1.2' | 'B2.1' | 'B2.2';
+export type LevelId =
+  | 'A1.1'
+  | 'A1.2'
+  | 'A2.1'
+  | 'A2.2'
+  | 'B1.1'
+  | 'B1.2'
+  | 'B2.1'
+  | 'B2.2';
 
 export type SkillTag =
   | 'explicit-information'
@@ -107,11 +115,18 @@ export interface Lesson {
   skillsTested: SkillTag[];
 }
 
+export interface LevelExample {
+  spanish: string;
+  english: string;
+}
+
 export interface LevelInfo {
   id: LevelId;
   name: string;
   description: string;
+  whatThisMeans?: string;
   expectedAbilities: string[];
+  examples?: LevelExample[];
   passageLength: { min: number; max: number };
   grammarComplexity: string;
   vocabularyComplexity: string;
@@ -209,6 +224,7 @@ export interface SkillMasteryRecord {
 export interface PlacementResult {
   id: string;
   recommendedLevel: LevelId;
+  highestLevelConsistent?: LevelId;
   readingScore: number;
   vocabularyScore: number;
   grammarScore: number;

@@ -2,25 +2,25 @@ import { Link } from 'react-router-dom';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
+import { CurrentLevelOverview } from '../components/progress/CurrentLevelOverview';
 import { useProgressData } from '../hooks/useProgressData';
 import { SKILL_LABELS, MASTERY_LABELS } from '../constants';
-import { getLevelInfo } from '../data/levels';
 
 export function HomePage() {
   const {
     profile,
     recommended,
+    foundationLesson,
     weeklyStats,
     skillMastery,
     dueVocab,
     dueMistakes,
     recentActivity,
-    levelDisplay,
     lessonProgress,
+    attempts,
     improvements,
   } = useProgressData();
 
-  const levelInfo = getLevelInfo(profile.currentLevel);
   const continueProgress = recommended
     ? lessonProgress.find((p) => p.lessonId === recommended.id)
     : null;
@@ -37,13 +37,21 @@ export function HomePage() {
       {!profile.placementCompleted && (
         <Card className="border-[var(--color-accent)]">
           <p className="m-0 mb-3">
-            Take the placement assessment to find your ideal starting level.
+            Choose your starting level or take a short assessment to find the right place to begin.
           </p>
           <Link to="/placement">
-            <Button>Start placement test</Button>
+            <Button>Choose where to begin</Button>
           </Link>
         </Card>
       )}
+
+      <CurrentLevelOverview
+        currentLevel={profile.currentLevel}
+        recommendedLesson={recommended}
+        foundationLesson={foundationLesson}
+        lessonProgress={lessonProgress}
+        attempts={attempts}
+      />
 
       {recommended && (
         <Card title="Continue learning">
@@ -57,7 +65,7 @@ export function HomePage() {
             {continueProgress && ` · ${continueProgress.progressPercentage}% complete`}
           </p>
           <Link to={`/lesson/${recommended.id}`}>
-            <Button>{continueProgress ? 'Resume lesson' : 'Start lesson'}</Button>
+            <Button>{continueProgress?.progressPercentage ? 'Resume lesson' : 'Start lesson'}</Button>
           </Link>
         </Card>
       )}
@@ -75,32 +83,21 @@ export function HomePage() {
         </Link>
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Current level">
-          <p className="text-xl font-semibold text-[var(--color-primary)] m-0 mb-2">
-            {levelDisplay}
-          </p>
-          {levelInfo && (
-            <p className="text-sm text-[var(--color-text-muted)] m-0">{levelInfo.description}</p>
-          )}
-          <p className="text-xs text-[var(--color-text-muted)] mt-3">
-            {profile.studyDays.length} study day{profile.studyDays.length !== 1 ? 's' : ''} recorded
-          </p>
-        </Card>
-
-        <Card title="Review due">
-          <div className="flex gap-6">
-            <div>
-              <p className="text-2xl font-bold m-0">{dueVocab.length}</p>
-              <p className="text-sm text-[var(--color-text-muted)]">Vocabulary</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold m-0">{dueMistakes.length}</p>
-              <p className="text-sm text-[var(--color-text-muted)]">Mistakes</p>
-            </div>
+      <Card title="Review due">
+        <div className="flex gap-6">
+          <div>
+            <p className="text-2xl font-bold m-0">{dueVocab.length}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Vocabulary</p>
           </div>
-        </Card>
-      </div>
+          <div>
+            <p className="text-2xl font-bold m-0">{dueMistakes.length}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Mistakes</p>
+          </div>
+        </div>
+        <p className="text-xs text-[var(--color-text-muted)] mt-3">
+          {profile.studyDays.length} study day{profile.studyDays.length !== 1 ? 's' : ''} recorded
+        </p>
+      </Card>
 
       <Card title="Weekly progress">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -174,11 +171,11 @@ export function HomePage() {
         <Card title="Recent activity">
           <ul className="space-y-2 m-0 p-0 list-none">
             {recentActivity.map((item, i) => (
-              <li key={i} className="text-sm flex justify-between">
-                <span>
+              <li key={i} className="text-sm flex justify-between gap-2">
+                <span className="min-w-0 truncate">
                   {item.type === 'lesson' ? '📖' : '🔄'} {item.title}
                 </span>
-                <span className="text-[var(--color-text-muted)]">
+                <span className="text-[var(--color-text-muted)] shrink-0">
                   {new Date(item.date).toLocaleDateString()}
                 </span>
               </li>

@@ -12,6 +12,7 @@ interface QuestionEngineProps {
   challengeMode?: boolean;
   showExplanationsImmediately?: boolean;
   autoAdvance?: boolean;
+  lessonLevel?: string;
 }
 
 export function QuestionEngine({
@@ -22,6 +23,7 @@ export function QuestionEngine({
   challengeMode = false,
   showExplanationsImmediately = true,
   autoAdvance = false,
+  lessonLevel,
 }: QuestionEngineProps) {
   const [selected, setSelected] = useState<string | string[]>('');
   const [submitted, setSubmitted] = useState(false);
@@ -37,7 +39,7 @@ export function QuestionEngine({
       answer = sequenceOrder;
     }
 
-    const correct = scoreQuestion(question, answer);
+    const correct = scoreQuestion(question, answer, lessonLevel);
     setIsCorrect(correct);
     setSubmitted(true);
     onAnswer(answer, correct, usedHint);
@@ -105,7 +107,7 @@ export function QuestionEngine({
             </Button>
           </div>
         ) : (
-          <Button onClick={handleSubmit} disabled={textAnswer.trim().length < 10}>
+          <Button onClick={handleSubmit} disabled={textAnswer.trim().length < (lessonLevel?.startsWith('A1') ? 5 : 10)}>
             Submit response
           </Button>
         )}
