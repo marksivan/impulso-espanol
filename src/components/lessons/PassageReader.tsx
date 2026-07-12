@@ -121,6 +121,14 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
     }
   }
 
+  function hideTranslation(index: number) {
+    setRevealedParagraphs((prev) => {
+      const next = new Set(prev);
+      next.delete(index);
+      return next;
+    });
+  }
+
   const isA1 = lesson.level.startsWith('A1');
 
   const paragraphs = settings.readingFocusMode
@@ -163,13 +171,20 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
                       <p className="text-sm text-[var(--color-text-muted)] italic m-0">
                         Translating paragraph...
                       </p>
-                    ) : translationErrors[realIdx] ? (
-                      <p className="text-sm text-[var(--color-error)] m-0">{translationErrors[realIdx]}</p>
-                    ) : paragraphTranslations[realIdx] ? (
-                      <p className="text-sm text-[var(--color-text-muted)] italic m-0">
-                        {paragraphTranslations[realIdx]}
-                      </p>
-                    ) : null
+                    ) : (
+                      <div className="space-y-2">
+                        {translationErrors[realIdx] ? (
+                          <p className="text-sm text-[var(--color-error)] m-0">{translationErrors[realIdx]}</p>
+                        ) : paragraphTranslations[realIdx] ? (
+                          <p className="text-sm text-[var(--color-text-muted)] italic m-0">
+                            {paragraphTranslations[realIdx]}
+                          </p>
+                        ) : null}
+                        <Button variant="ghost" size="sm" onClick={() => hideTranslation(realIdx)}>
+                          Hide translation
+                        </Button>
+                      </div>
+                    )
                   ) : (
                     <Button
                       variant="ghost"
