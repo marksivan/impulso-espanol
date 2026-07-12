@@ -4,7 +4,7 @@ import { lookupWord } from '../../services/dictionaryService';
 import { vocabularyRepository } from '../../repositories/vocabularyRepository';
 import { progressRepository } from '../../repositories/progressRepository';
 import { tokenizeSpanishWord, getSentenceContainingWord } from '../../utilities/helpers';
-import { SpeakButton } from '../common/SpeakButton';
+import { SpeechControls } from '../common/SpeechControls';
 import { Button } from '../common/Button';
 import { useApp } from '../../context/AppContext';
 
@@ -100,10 +100,7 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
         style={{ fontSize: sizeMap[fontSize], lineHeight: isA1 ? 1.8 : undefined }}
         aria-label="Spanish passage"
       >
-        <div className="flex items-center gap-2 mb-4">
-          <SpeakButton text={lesson.passage.text} label="Listen to passage" />
-          <span className="text-xs text-[var(--color-text-muted)]">Listen to passage</span>
-        </div>
+        <SpeechControls text={lesson.passage.text} label="Listen to passage" className="mb-4" />
         {paragraphs.map((para, idx) => {
           const realIdx = settings.readingFocusMode ? currentParagraph : idx;
           return (

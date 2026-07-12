@@ -248,6 +248,7 @@ export interface UserProfile {
 
 export interface UserSettings {
   theme: ThemeMode;
+  speechRate: number;
   passageFontSize: 'small' | 'medium' | 'large' | 'xlarge';
   preferredDifficulty: DifficultyPreference;
   defaultQuestionLanguage: 'es' | 'en';

@@ -1,26 +1,23 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CurrentLevelOverview } from '../components/progress/CurrentLevelOverview';
+import { AppProvider } from '../context/AppContext';
 import { a12Lessons } from '../data/lessons/a12Lessons';
-
-vi.stubGlobal('speechSynthesis', {
-  speak: vi.fn(),
-  cancel: vi.fn(),
-  getVoices: () => [],
-});
 
 function renderOverview() {
   return render(
-    <MemoryRouter>
-      <CurrentLevelOverview
-        currentLevel="A1.2"
-        recommendedLesson={a12Lessons[0]}
-        foundationLesson={undefined}
-        lessonProgress={[]}
-        attempts={[]}
-      />
-    </MemoryRouter>,
+    <AppProvider>
+      <MemoryRouter>
+        <CurrentLevelOverview
+          currentLevel="A1.2"
+          recommendedLesson={a12Lessons[0]}
+          foundationLesson={undefined}
+          lessonProgress={[]}
+          attempts={[]}
+        />
+      </MemoryRouter>
+    </AppProvider>,
   );
 }
 

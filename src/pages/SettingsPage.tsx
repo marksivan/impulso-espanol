@@ -129,6 +129,24 @@ export function SettingsPage() {
             </select>
           </label>
           <label className="block">
+            <span className="text-sm font-medium">Audio playback speed</span>
+            <div className="flex items-center gap-3 mt-1">
+              <input
+                type="range"
+                min={0.5}
+                max={1.25}
+                step={0.05}
+                value={settings.speechRate ?? 0.75}
+                onChange={(e) => updateSettings({ speechRate: Number(e.target.value) })}
+                className="flex-1 accent-[var(--color-accent)]"
+                aria-label="Default audio playback speed"
+              />
+              <span className="text-sm tabular-nums w-12 text-right">
+                {(settings.speechRate ?? 0.75).toFixed(2)}×
+              </span>
+            </div>
+          </label>
+          <label className="block">
             <span className="text-sm font-medium">Passage font size</span>
             <select
               className="w-full mt-1 p-2 border border-[var(--color-border)] rounded-lg"
