@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Lesson } from '../../types';
 import { lookupWord } from '../../services/dictionaryService';
+import { translateText } from '../../services/translationService';
 import { vocabularyRepository } from '../../repositories/vocabularyRepository';
 import { progressRepository } from '../../repositories/progressRepository';
 import { tokenizeSpanishWord, getSentenceContainingWord } from '../../utilities/helpers';
@@ -20,6 +21,9 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revealedParagraphs, setRevealedParagraphs] = useState<Set<number>>(new Set());
+  const [paragraphTranslations, setParagraphTranslations] = useState<Record<number, string>>({});
+  const [translationLoading, setTranslationLoading] = useState<number | null>(null);
+  const [translationErrors, setTranslationErrors] = useState<Record<number, string>>({});
   const [currentParagraph, setCurrentParagraph] = useState(0);
   const [note, setNote] = useState('');
 
@@ -73,8 +77,9 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
     setLookupResult(null);
   }
 
-  function revealTranslation(index: number) {
+  async function revealTranslation(index: number, paragraphText: string) {
     setRevealedParagraphs((prev) => new Set([...prev, index]));
+
     const progress = progressRepository.getProgressForLesson(lesson.id);
     if (progress) {
       progressRepository.saveLessonProgress({
@@ -82,6 +87,37 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
         paragraphTranslationsRevealed: progress.paragraphTranslationsRevealed + 1,
         lastAccessedAt: new Date().toISOString(),
       });
+    }
+
+    if (paragraphTranslations[index]) return;
+
+    const curated = lesson.passage.paragraphTranslations?.[index];
+    if (curated) {
+      setParagraphTranslations((prev) => ({ ...prev, [index]: curated }));
+      return;
+    }
+
+    setTranslationLoading(index);
+    setTranslationErrors((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+
+    try {
+      const result = await translateText({
+        text: paragraphText,
+        sourceLanguage: 'es',
+        targetLanguage: 'en',
+      });
+      setParagraphTranslations((prev) => ({ ...prev, [index]: result.translatedText }));
+    } catch (err) {
+      setTranslationErrors((prev) => ({
+        ...prev,
+        [index]: err instanceof Error ? err.message : 'Could not translate this paragraph.',
+      }));
+    } finally {
+      setTranslationLoading(null);
     }
   }
 
@@ -123,14 +159,22 @@ export function PassageReader({ lesson, onWordLookup }: PassageReaderProps) {
               {!settings.challengeMode && (
                 <div className="mt-2">
                   {revealedParagraphs.has(realIdx) ? (
-                    <p className="text-sm text-[var(--color-text-muted)] italic m-0">
-                      [Machine translation available in full lesson mode]
-                    </p>
+                    translationLoading === realIdx ? (
+                      <p className="text-sm text-[var(--color-text-muted)] italic m-0">
+                        Translating paragraph...
+                      </p>
+                    ) : translationErrors[realIdx] ? (
+                      <p className="text-sm text-[var(--color-error)] m-0">{translationErrors[realIdx]}</p>
+                    ) : paragraphTranslations[realIdx] ? (
+                      <p className="text-sm text-[var(--color-text-muted)] italic m-0">
+                        {paragraphTranslations[realIdx]}
+                      </p>
+                    ) : null
                   ) : (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => revealTranslation(realIdx)}
+                      onClick={() => revealTranslation(realIdx, para)}
                     >
                       Reveal paragraph translation
                     </Button>

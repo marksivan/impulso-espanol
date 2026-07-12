@@ -54,6 +54,7 @@ export interface Passage {
   title: string;
   text: string;
   paragraphs: string[];
+  paragraphTranslations?: string[];
   wordCount: number;
   sourceType: 'original' | 'adapted';
   audioUrl?: string;
