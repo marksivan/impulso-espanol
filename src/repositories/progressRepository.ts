@@ -27,6 +27,7 @@ const DEFAULT_PROFILE: UserProfile = {
 
 const DEFAULT_SETTINGS: UserSettings = {
   theme: 'system',
+  speechRate: 0.75,
   passageFontSize: 'medium',
   preferredDifficulty: 'standard',
   defaultQuestionLanguage: 'es',
@@ -159,7 +160,8 @@ export interface SettingsRepository {
 
 export const settingsRepository: SettingsRepository = {
   getSettings(): UserSettings {
-    return readStorageValue(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+    const stored = readStorageValue(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+    return { ...DEFAULT_SETTINGS, ...stored };
   },
 
   updateSettings(updates: Partial<UserSettings>): UserSettings {

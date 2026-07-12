@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import { DEFAULT_SPEECH_RATE, useSpanishSpeech } from '../../hooks/useSpanishSpeech';
 
 interface SpeakButtonProps {
   text: string;
@@ -6,58 +7,33 @@ interface SpeakButtonProps {
   className?: string;
 }
 
-export function useSpeechSupported(): boolean {
-  const [supported, setSupported] = useState(false);
-
-  useEffect(() => {
-    setSupported(typeof window !== 'undefined' && 'speechSynthesis' in window);
-  }, []);
-
-  return supported;
-}
+export { useSpeechSupported } from '../../hooks/useSpanishSpeech';
 
 export function SpeakButton({
   text,
   label = 'Listen to Spanish sentence',
   className = '',
 }: SpeakButtonProps) {
-  const supported = useSpeechSupported();
-  const [speaking, setSpeaking] = useState(false);
-
-  const speak = useCallback(() => {
-    if (!supported || !text.trim()) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-ES';
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-
-    const voices = window.speechSynthesis.getVoices();
-    const spanishVoice = voices.find(
-      (v) => v.lang.startsWith('es-ES') || v.lang.startsWith('es-MX') || v.lang.startsWith('es'),
-    );
-    if (spanishVoice) utterance.voice = spanishVoice;
-
-    setSpeaking(true);
-    window.speechSynthesis.speak(utterance);
-  }, [supported, text]);
-
-  useEffect(() => {
-    return () => window.speechSynthesis?.cancel();
-  }, []);
+  const { settings } = useApp();
+  const rate = settings.speechRate ?? DEFAULT_SPEECH_RATE;
+  const { supported, state, play } = useSpanishSpeech(text, rate);
 
   if (!supported) return null;
+
+  const isActive = state === 'speaking' || state === 'paused';
 
   return (
     <button
       type="button"
-      onClick={speak}
+      onClick={play}
       aria-label={label}
       title={label}
-      className={`inline-flex items-center justify-center w-8 h-8 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] hover:bg-[var(--color-border)] transition-colors shrink-0 ${className}`}
-      disabled={speaking}
+      className={`inline-flex items-center justify-center w-8 h-8 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] hover:bg-[var(--color-border)] transition-colors shrink-0 ${
+        isActive ? 'opacity-70' : ''
+      } ${className}`}
+      disabled={isActive && state === 'speaking'}
     >
-      <span aria-hidden="true">{speaking ? '🔊' : '🔈'}</span>
+      <span aria-hidden="true">{isActive ? '🔊' : '🔈'}</span>
     </button>
   );
 }
