@@ -12,6 +12,7 @@ import { readStorageValue, writeStorageValue, removeStorageValue } from '../util
 import { calculateSkillMastery } from '../utilities/skillMastery';
 import { generateId } from '../utilities/helpers';
 import { DEFAULT_LEVEL } from '../constants';
+import { migrateProfileIfNeeded } from '../utilities/migration';
 
 const DEFAULT_PROFILE: UserProfile = {
   id: generateId('profile'),
@@ -60,7 +61,8 @@ export interface ProgressRepository {
 
 export const progressRepository: ProgressRepository = {
   getProfile(): UserProfile {
-    return readStorageValue(STORAGE_KEYS.profile, DEFAULT_PROFILE);
+    const profile = readStorageValue(STORAGE_KEYS.profile, DEFAULT_PROFILE);
+    return migrateProfileIfNeeded(profile);
   },
 
   updateProfile(updates: Partial<UserProfile>): UserProfile {

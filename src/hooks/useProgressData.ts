@@ -6,7 +6,7 @@ import { translationHistoryRepository } from '../repositories/dataRepository';
 import { useApp } from '../context/AppContext';
 import { calculatePercentage, isThisWeek } from '../utilities/helpers';
 import { getImprovementMessage } from '../utilities/skillMastery';
-import { ALL_LESSONS, getRecommendedLesson } from '../data/lessons';
+import { ALL_LESSONS, getRecommendedLesson, getFoundationReviewLesson, getChallengeLesson } from '../data/lessons';
 import { getLevelDisplay } from '../data/levels';
 
 export function useProgressData() {
@@ -28,7 +28,18 @@ export function useProgressData() {
     const completedIds = new Set(
       lessonProgress.filter((p) => p.completedAt).map((p) => p.lessonId),
     );
-    const recommended = getRecommendedLesson(profile.currentLevel, completedIds);
+    const recommended = getRecommendedLesson(
+      profile.currentLevel,
+      completedIds,
+      lessonProgress,
+    );
+    const foundationLesson = getFoundationReviewLesson(profile.currentLevel, completedIds);
+    const challengeLesson = getChallengeLesson(
+      profile.currentLevel,
+      completedIds,
+      lessonProgress,
+      attempts,
+    );
 
     const weekAttempts = attempts.filter((a) => isThisWeek(a.attemptedAt));
     const weekLessons = lessonProgress.filter(
@@ -98,6 +109,8 @@ export function useProgressData() {
       placement,
       translationHistory,
       recommended,
+      foundationLesson,
+      challengeLesson,
       weeklyStats,
       overallAccuracy,
       recentActivity,

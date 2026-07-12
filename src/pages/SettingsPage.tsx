@@ -11,7 +11,10 @@ import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { DIFFICULTY_LABELS } from '../constants';
-import type { DifficultyPreference, ThemeMode, TranslationAssistance } from '../types';
+import { LEVELS } from '../data/levels';
+import { progressRepository } from '../repositories/progressRepository';
+import { getLevelSelectLabel } from '../utilities/levelUtils';
+import type { DifficultyPreference, ThemeMode, TranslationAssistance, LevelId } from '../types';
 
 export function SettingsPage() {
   const { settings, updateSettings, refreshData } = useApp();
@@ -19,6 +22,9 @@ export function SettingsPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [pendingImport, setPendingImport] = useState<unknown>(null);
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const [pendingLevel, setPendingLevel] = useState<LevelId | null>(null);
+  const profile = progressRepository.getProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleExport() {
@@ -80,6 +86,33 @@ export function SettingsPage() {
           Customize your learning experience.
         </p>
       </header>
+
+      <Card title="Current learning level">
+        <p className="text-sm text-[var(--color-text-muted)] mb-3">
+          Changing your level changes lesson recommendations. It does not erase your progress.
+        </p>
+        <p className="font-medium mb-3">{getLevelSelectLabel(profile.currentLevel)}</p>
+        <label className="block">
+          <span className="text-sm font-medium">Select level</span>
+          <select
+            className="w-full mt-1 p-2 border border-[var(--color-border)] rounded-lg"
+            value={profile.currentLevel}
+            onChange={(e) => {
+              const level = e.target.value as LevelId;
+              if (level !== profile.currentLevel) {
+                setPendingLevel(level);
+                setShowLevelModal(true);
+              }
+            }}
+          >
+            {LEVELS.map((l) => (
+              <option key={l.id} value={l.id}>
+                {getLevelSelectLabel(l.id as LevelId)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </Card>
 
       <Card title="Appearance">
         <div className="space-y-4">
@@ -235,6 +268,29 @@ export function SettingsPage() {
           </div>
         </div>
       </Card>
+
+      <Modal
+        isOpen={showLevelModal}
+        onClose={() => {
+          setShowLevelModal(false);
+          setPendingLevel(null);
+        }}
+        title="Change learning level?"
+        confirmLabel="Change level"
+        onConfirm={() => {
+          if (pendingLevel) {
+            progressRepository.updateProfile({ currentLevel: pendingLevel });
+            refreshData();
+          }
+          setShowLevelModal(false);
+          setPendingLevel(null);
+        }}
+      >
+        <p>
+          Your lesson history, vocabulary, and progress will be preserved. Only recommendations
+          will update to match {pendingLevel && getLevelSelectLabel(pendingLevel)}.
+        </p>
+      </Modal>
 
       <Modal
         isOpen={showImportModal}

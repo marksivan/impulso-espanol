@@ -1,6 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ALL_LESSONS } from '../data/lessons';
+import { useMemo, useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  ALL_LESSONS,
+  getRecommendedLesson,
+  getFoundationReviewLesson,
+  getChallengeLesson,
+  getLessonCardLabel,
+  getLessonCardLabelText,
+  sortLessonsForDisplay,
+} from '../data/lessons';
 import { useProgressData } from '../hooks/useProgressData';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
@@ -9,21 +17,43 @@ import { EmptyState } from '../components/common/EmptyState';
 import { LEVELS } from '../data/levels';
 import { TOPICS } from '../constants';
 import { calculateLessonScore } from '../utilities/lessonCompletion';
+import { getLevelSelectLabel } from '../utilities/levelUtils';
+import type { LevelId } from '../types';
 
 export function LearnPage() {
-  const { lessonProgress, attempts } = useProgressData();
+  const { lessonProgress, attempts, profile } = useProgressData();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  useEffect(() => {
+    const level = searchParams.get('level');
+    if (level) setLevelFilter(level);
+  }, [searchParams]);
 
   const progressMap = useMemo(
     () => new Map(lessonProgress.map((p) => [p.lessonId, p])),
     [lessonProgress],
   );
 
+  const completedIds = useMemo(
+    () => new Set(lessonProgress.filter((p) => p.completedAt).map((p) => p.lessonId)),
+    [lessonProgress],
+  );
+
+  const recommended = getRecommendedLesson(profile.currentLevel, completedIds, lessonProgress);
+  const foundation = getFoundationReviewLesson(profile.currentLevel, completedIds);
+  const challenge = getChallengeLesson(
+    profile.currentLevel,
+    completedIds,
+    lessonProgress,
+    attempts,
+  );
+
   const filtered = useMemo(() => {
-    return ALL_LESSONS.filter((lesson) => {
+    const base = ALL_LESSONS.filter((lesson) => {
       if (search) {
         const q = search.toLowerCase();
         if (
@@ -43,7 +73,14 @@ export function LearnPage() {
       }
       return true;
     });
-  }, [search, levelFilter, topicFilter, statusFilter, progressMap]);
+    return levelFilter ? base : sortLessonsForDisplay(base, profile.currentLevel);
+  }, [search, levelFilter, topicFilter, statusFilter, progressMap, profile.currentLevel]);
+
+  const pathItems = [
+    recommended && { lesson: recommended, label: `Continue ${profile.currentLevel}` },
+    foundation && { lesson: foundation, label: `Review ${foundation.level} foundations` },
+    challenge && { lesson: challenge, label: `Preview ${challenge.level} challenge` },
+  ].filter(Boolean) as { lesson: (typeof ALL_LESSONS)[0]; label: string }[];
 
   return (
     <div className="space-y-6">
@@ -53,6 +90,30 @@ export function LearnPage() {
           Browse lessons by level, topic, and skill focus.
         </p>
       </header>
+
+      {pathItems.length > 0 && !levelFilter && (
+        <Card title="Recommended path">
+          <div className="space-y-2">
+            {pathItems.map(({ lesson, label }, i) => (
+              <div
+                key={lesson.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0"
+              >
+                <div className="min-w-0">
+                  <span className="text-xs text-[var(--color-text-muted)]">{i + 1}.</span>{' '}
+                  <span className="font-medium">{label}</span>
+                  <span className="text-sm text-[var(--color-text-muted)] ml-2">
+                    — {lesson.title}
+                  </span>
+                </div>
+                <Link to={`/lesson/${lesson.id}`}>
+                  <Button size="sm">Open</Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="flex flex-wrap gap-3">
         <input
@@ -72,7 +133,7 @@ export function LearnPage() {
           <option value="">All levels</option>
           {LEVELS.map((l) => (
             <option key={l.id} value={l.id}>
-              {l.id}
+              {getLevelSelectLabel(l.id as LevelId)}
             </option>
           ))}
         </select>
@@ -111,12 +172,32 @@ export function LearnPage() {
           {filtered.map((lesson) => {
             const progress = progressMap.get(lesson.id);
             const score = calculateLessonScore(attempts, lesson.id);
+            const cardLabel = getLessonCardLabel(
+              lesson,
+              profile.currentLevel,
+              recommended?.id,
+              foundation?.id,
+              challenge?.id,
+              progress,
+            );
             return (
               <Card key={lesson.id}>
                 <div className="flex flex-wrap gap-2 mb-2">
                   <Badge variant="level">{lesson.level}</Badge>
                   <Badge>{lesson.topic}</Badge>
-                  {progress?.completedAt && <Badge variant="success">Completed</Badge>}
+                  {cardLabel && (
+                    <Badge
+                      variant={
+                        cardLabel === 'completed'
+                          ? 'success'
+                          : cardLabel === 'recommended'
+                            ? 'level'
+                            : 'default'
+                      }
+                    >
+                      {getLessonCardLabelText(cardLabel)}
+                    </Badge>
+                  )}
                 </div>
                 <h3 className="text-lg font-semibold m-0 mb-1">{lesson.title}</h3>
                 {lesson.subtitle && (

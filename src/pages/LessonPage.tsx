@@ -246,6 +246,7 @@ export function LessonPage() {
               <QuestionEngine
                 key={currentQuestion.id}
                 question={currentQuestion}
+                lessonLevel={lesson.level}
                 onAnswer={
                   stage === 'production' ? handleProductionComplete : (a, c, h) => {
                     handleAnswer(a, c, h);
