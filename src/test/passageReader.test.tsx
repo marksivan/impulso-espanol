@@ -48,4 +48,25 @@ describe('PassageReader translations', () => {
       targetLanguage: 'en',
     });
   });
+
+  it('hides a revealed translation and re-shows it without refetching', async () => {
+    renderPassageReader();
+
+    fireEvent.click(screen.getAllByText('Reveal paragraph translation')[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Daniel is a student')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Hide translation'));
+
+    expect(screen.queryByText('Daniel is a student')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Reveal paragraph translation')[0]).toBeInTheDocument();
+    expect(translateText).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getAllByText('Reveal paragraph translation')[0]);
+
+    expect(screen.getByText('Daniel is a student')).toBeInTheDocument();
+    expect(translateText).toHaveBeenCalledTimes(1);
+  });
 });
