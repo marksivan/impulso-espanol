@@ -10,7 +10,13 @@ interface ModalProps {
   onConfirm?: () => void;
   confirmVariant?: 'primary' | 'danger';
   cancelLabel?: string;
+  size?: 'md' | 'lg';
 }
+
+const SIZE_CLASS = {
+  md: 'max-w-md',
+  lg: 'max-w-2xl',
+} as const;
 
 export function Modal({
   isOpen,
@@ -21,6 +27,7 @@ export function Modal({
   onConfirm,
   confirmVariant = 'primary',
   cancelLabel = 'Cancel',
+  size = 'md',
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -46,16 +53,16 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="max-w-md w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-xl flex flex-col"
+        className={`${SIZE_CLASS[size]} w-full max-h-[85vh] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-xl flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-5 border-b border-[var(--color-border)]">
+        <div className="p-5 border-b border-[var(--color-border)] shrink-0">
           <h2 id="modal-title" className="text-lg font-semibold m-0">
             {title}
           </h2>
         </div>
-        <div className="p-5 flex-1">{children}</div>
-        <div className="p-5 border-t border-[var(--color-border)] flex gap-3 justify-end">
+        <div className="p-5 flex-1 overflow-y-auto">{children}</div>
+        <div className="p-5 border-t border-[var(--color-border)] flex gap-3 justify-end shrink-0">
           <Button variant="ghost" onClick={onClose}>
             {cancelLabel}
           </Button>
