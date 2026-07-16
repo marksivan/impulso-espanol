@@ -6,6 +6,7 @@ import { QuestionEngine } from '../components/lessons/QuestionEngine';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { EmptyState } from '../components/common/EmptyState';
+import { Modal } from '../components/common/Modal';
 import { progressRepository } from '../repositories/progressRepository';
 import { reviewRepository } from '../repositories/reviewRepository';
 import { useApp } from '../context/AppContext';
@@ -34,6 +35,7 @@ export function LessonPage() {
     (existingProgress?.currentStage as (typeof STAGES)[number]) ?? 'preview',
   );
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [showPassageReview, setShowPassageReview] = useState(false);
 
   const startLesson = useCallback(() => {
     if (!lesson) return;
@@ -234,7 +236,7 @@ export function LessonPage() {
       {['comprehension', 'vocabulary', 'grammar', 'production'].includes(stage) && (
         <div className="space-y-4">
           {stage !== 'comprehension' && (
-            <Button variant="ghost" size="sm" onClick={() => setStage('reading')}>
+            <Button variant="ghost" size="sm" onClick={() => setShowPassageReview(true)}>
               Review passage
             </Button>
           )}
@@ -253,7 +255,7 @@ export function LessonPage() {
                   }
                 }
                 onSaveMistake={handleSaveMistake}
-                onReviewPassage={() => setStage('reading')}
+                onReviewPassage={() => setShowPassageReview(true)}
                 challengeMode={settings.challengeMode}
                 showExplanationsImmediately={settings.showExplanationsImmediately}
                 autoAdvance={settings.autoAdvanceAfterCorrect}
@@ -269,6 +271,16 @@ export function LessonPage() {
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={showPassageReview}
+        onClose={() => setShowPassageReview(false)}
+        title={lesson.passage.title}
+        cancelLabel="Back to questions"
+        size="lg"
+      >
+        <PassageReader lesson={lesson} />
+      </Modal>
 
       {stage === 'complete' && (
         <div className="text-center py-8">
